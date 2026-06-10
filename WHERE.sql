@@ -1,0 +1,49 @@
+-- WHERE
+
+USE PARKS_AND_RECREATION;
+
+SELECT * FROM EMPLOYEE_SALARY;
+
+SELECT * 
+FROM employee_salary 
+WHERE SALARY >= 70000;
+
+SELECT * 
+FROM employee_demographics
+WHERE GENDER != "FEMALE";
+
+SELECT * 
+FROM employee_demographics
+WHERE BIRTH_DATE > "1985-07-26";
+
+-- AND
+
+SELECT * 
+FROM employee_demographics
+WHERE AGE > 29
+AND  GENDER = "FEMALE";
+
+-- OR
+SELECT * 
+FROM employee_demographics
+WHERE BIRTH_DATE > "1985-07-26";
+
+-- OR
+
+SELECT * 
+FROM employee_demographics
+WHERE AGE > 29
+OR  GENDER = "FEMALE";
+
+-- LIKE
+-- % MEANS CHARACTERS AFTER OR BEFORE
+-- UNDERSCORES MEAN EXACT AMOUNT OF CHARACTERS
+
+SELECT * 
+FROM employee_demographics
+WHERE LAST_NAME LIKE "%ER%";
+
+SELECT * 
+FROM employee_demographics
+WHERE LAST_NAME LIKE "%ER__%";
+
