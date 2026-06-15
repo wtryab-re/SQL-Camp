@@ -1,0 +1,138 @@
+use world_layoffs;
+Select * from layoffs;
+-- 1. Remove Duplicates
+-- 2. Standardize
+-- 3. Null Values or Blank Values
+-- 4. Remove any columns
+
+CREATE TABLE layoffs_staging
+LIKE layoffs;
+
+INSERT INTO LAYOFFS_STAGING SELECT * FROM LAYOFFS;
+
+WITH CTE AS (
+	SELECT *, 
+    ROW_NUMBER()
+    OVER(
+		PARTITION BY 
+        COMPANY, LOCATION, INDUSTRY, TOTAL_LAID_OFF, PERCENTAGE_LAID_OFF, `DATE`, STAGE, COUNTRY, FUNDS_RAISED_MILLIONS
+        ) AS DUPLICATES
+	FROM layoffs_staging
+)
+SELECT * 
+FROM CTE 
+WHERE DUPLICATES > 1 ;
+
+-- CREATE A NEW TABLE AND THEN DELETE FROM THERE THE DUPLICATES
+CREATE TABLE `layoffs_staging_2` (
+  `company` text,
+  `location` text,
+  `industry` text,
+  `total_laid_off` int DEFAULT NULL,
+  `percentage_laid_off` text,
+  `date` text,
+  `stage` text,
+  `country` text,
+  `funds_raised_millions` int DEFAULT NULL,
+  `DUPLICATES` INT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO LAYOFFS_STAGING_2 
+SELECT *, 
+    ROW_NUMBER()
+    OVER(
+		PARTITION BY 
+        COMPANY, LOCATION, INDUSTRY, TOTAL_LAID_OFF, PERCENTAGE_LAID_OFF, `DATE`, STAGE, COUNTRY, FUNDS_RAISED_MILLIONS
+        ) AS DUPLICATES
+	FROM layoffs_staging;
+    
+    
+SELECT * FROM LAYOFFS_STAGING_2 WHERE DUPLICATES>1;
+
+DELETE FROM LAYOFFS_STAGING_2 WHERE DUPLICATES>1;
+
+-- STANDARDIZING DATA
+SELECT * FROM LAYOFFS_STAGING_2;
+SELECT DISTINCT(LOCATION) FROM LAYOFFS_STAGING_2;
+
+UPDATE LAYOFFS_STAGING_2
+SET COMPANY = TRIM(COMPANY);
+
+
+UPDATE LAYOFFS_STAGING_2
+SET LOCATION = TRIM(LOCATION);
+
+
+UPDATE LAYOFFS_STAGING_2
+SET INDUSTRY = TRIM(LOCATION);
+
+SELECT distinct(INDUSTRY) FROM LAYOFFS_STAGING;
+
+SELECT INDUSTRY FROM LAYOFFS_STAGING_2 WHERE INDUSTRY LIKE "%CRYPTO%";
+
+UPDATE LAYOFFS_STAGING_2
+SET INDUSTRY = "Crypto"
+WHERE INDUSTRY LIKE "%Crypto%";
+
+Select distinct country 
+from layoffs_staging_2
+order by country;
+
+UPDATE LAYOFFS_STAGING_2
+SET COUNTRY = "United States"
+WHERE COUNTRY LIKE "%United States%";
+
+Select * from layoffs_staging_2;
+
+Select `date`, str_to_date(`date`, "%m/%d/%Y") from layoffs_staging_2;
+
+UPDATE LAYOFFS_STAGING_2
+SET `date` = str_to_date(`date`, "%m/%d/%Y");
+
+ALTER TABLE LAYOFFS_STAGING_2
+MODIFY COLUMN `date` DATE;
+
+Select * 
+from layoffs_staging_2
+WHERE TOTAL_LAID_OFF IS NULL
+OR PERCENTAGE_LAID_OFF IS NULL;
+
+
+Select * FROM LAYOFFS_STAGING_2
+WHERE INDUSTRY = "";
+
+Select * FROM LAYOFFS_STAGING_2
+WHERE company = "airbnb";
+
+select t1.company, t1.location, t1.industry, t2.industry from layoffs_staging_2 as t1
+join layoffs_staging_2 as t2
+on (t1.company = t2.company
+and t2.location=t1.location
+)
+WHERE (T1.INDUSTRY IS NULL OR T1.INDUSTRY = "") AND T2.INDUSTRY IS NOT NULL;
+
+UPDATE LAYOFFS_STAGING_2 T1
+JOIN layoffs_staging_2 as t2
+on (t1.company = t2.company
+and t2.location=t1.location
+)
+SET T1.INDUSTRY = T2.INDUSTRY
+WHERE (T1.INDUSTRY IS NULL OR T1.INDUSTRY = "") AND T2.INDUSTRY IS NOT NULL;
+
+UPDATE LAYOFFS_STAGING_2
+SET INDUSTRY = NULL
+WHERE INDUSTRY LIKE "";
+
+SELECT * FROM LAYOFFS_STAGING_2 WHERE company like "bally%";
+
+-- drop columns & rows
+
+SELECT * FROM LAYOFFS_STAGING_2;
+
+SELECT * FROM LAYOFFS_STAGING_2
+WHERE TOTAL_LAID_OFF IS NULL
+AND PERCENTAGE_LAID_OFF IS NULL;
+
+ALTER TABLE LAYOFFS_STAGING_2
+DROP COLUMN DUPLICATES;
+
